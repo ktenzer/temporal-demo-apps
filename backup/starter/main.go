@@ -7,7 +7,7 @@ import (
 
 	"crypto/tls"
 
-	"github.com/temporalio/samples-go/helloworld"
+	"github.com/temporal-demo-apps/backup"
 	"go.temporal.io/sdk/client"
 )
 
@@ -49,7 +49,7 @@ func main() {
 		TaskQueue: "backup-sample",
 	}
 
-	we, err := c.ExecuteWorkflow(context.Background(), workflowOptions, helloworld.Workflow, "Temporal")
+	we, err := c.ExecuteWorkflow(context.Background(), workflowOptions, backup.Workflow, "Temporal")
 	if err != nil {
 		log.Fatalln("Unable to execute workflow", err)
 	}

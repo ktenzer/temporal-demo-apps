@@ -47,7 +47,7 @@ func main() {
 
 	w := worker.New(c, "backup-sample", worker.Options{})
 
-	w.RegisterWorkflow(backup.BackupWorkflow)
+	w.RegisterWorkflow(backup.Workflow)
 	w.RegisterActivity(backup.QuiesceActivity)
 	w.RegisterActivity(backup.BackupActivity)
 	w.RegisterActivity(backup.UnQuiesceActivity)

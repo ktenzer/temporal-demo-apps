@@ -4,7 +4,6 @@ go 1.18
 
 require (
 	github.com/gorilla/mux v1.8.0
-	github.com/temporalio/samples-go v1.3.0
 	go.temporal.io/sdk v1.16.0
 	go.temporal.io/sdk/contrib/tools/workflowcheck v0.0.0-20220819183257-3d111e36d1b2
 )
