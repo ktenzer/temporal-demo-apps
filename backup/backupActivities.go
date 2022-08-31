@@ -11,51 +11,51 @@ import (
 	_ "go.temporal.io/sdk/contrib/tools/workflowcheck/determinism"
 )
 
-func QuiesceActivity(ctx context.Context, backupId string) (string, error) {
+func QuiesceActivity(ctx context.Context, backupId string) (Result, error) {
 	logger := activity.GetLogger(ctx)
 
 	logger.Info("Activity", "name", backupId)
 
 	result, err := Quiesce("localhost", "9977", backupId)
 	if err != nil {
-		return "HTTP error", err
+		return result, err
 	}
 
 	if result.Code != 0 {
-		return "Result message " + result.Message + "!", errors.New("Error Code: " + strconv.Itoa(result.Code))
+		return result, errors.New("Error Code: " + strconv.Itoa(result.Code))
 	}
 
-	return "Result message " + result.Message + "!", nil
+	return result, nil
 }
 
-func BackupActivity(ctx context.Context, backupId string) (string, error) {
+func BackupActivity(ctx context.Context, backupId string) (Result, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("Activity", "name", backupId)
 
 	result, err := Backup("localhost", "9977", backupId)
 	if err != nil {
-		return "HTTP error", err
+		return result, err
 	}
 
 	if result.Code != 0 {
-		return "Result message " + result.Message + "!", errors.New("Error Code: " + strconv.Itoa(result.Code))
+		return result, errors.New("Error Code: " + strconv.Itoa(result.Code))
 	}
 
-	return "Result message " + result.Message + "!", nil
+	return result, nil
 }
 
-func UnQuiesceActivity(ctx context.Context, backupId string) (string, error) {
+func UnQuiesceActivity(ctx context.Context, backupId string) (Result, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("Activity", "name", backupId)
 
 	result, err := UnQuiesce("localhost", "9977", backupId)
 	if err != nil {
-		return "HTTP error", err
+		return result, err
 	}
 
 	if result.Code != 0 {
-		return "Result message " + result.Message + "!", errors.New("Error Code: " + strconv.Itoa(result.Code))
+		return result, errors.New("Error Code: " + strconv.Itoa(result.Code))
 	}
 
-	return "Result message " + result.Message + "!", nil
+	return result, nil
 }

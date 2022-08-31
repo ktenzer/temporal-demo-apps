@@ -12,6 +12,11 @@ import (
 	"go.temporal.io/sdk/client"
 )
 
+type WorkflowResult struct {
+	Code     int      `json:"code"`
+	Messages []string `json:"message"`
+}
+
 func main() {
 	// The client is a heavyweight object that should be created once per process.
 	const clientCertPath string = "/home/ktenzer/temporal/certs/ca.pem"
@@ -60,7 +65,7 @@ func main() {
 	log.Println("Started workflow", "BackupId", backupId, "WorkflowID", we.GetID(), "RunID", we.GetRunID())
 
 	// Synchronously wait for the workflow completion.
-	var result string
+	var result WorkflowResult
 	err = we.Get(context.Background(), &result)
 	if err != nil {
 		log.Fatalln("Unable get workflow result", err)

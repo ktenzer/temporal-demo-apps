@@ -11,9 +11,13 @@ import (
 	_ "go.temporal.io/sdk/contrib/tools/workflowcheck/determinism"
 )
 
-func Workflow(ctx workflow.Context, backupId string) (string, error) {
-	var result string
+const (
+	BackupSignalName = "startbackup"
+)
 
+func Workflow(ctx workflow.Context, backupId string) (WorkflowResult, error) {
+	var workflowResult WorkflowResult
+	var workflowMessages []string
 	retryPolicy := &temporal.RetryPolicy{
 		InitialInterval:        time.Second,
 		BackoffCoefficient:     2.0,
@@ -32,37 +36,48 @@ func Workflow(ctx workflow.Context, backupId string) (string, error) {
 	logger.Info("HelloWorld workflow started", "backupId", backupId)
 
 	// Quiesce Activity
-	err := RunQuiesce(ctx, backupId, result)
+	result, err := RunQuiesce(ctx, backupId)
+	workflowResult.Code = result.Code
+	workflowMessages = append(workflowMessages, result.Message)
+	workflowResult.Messages = workflowMessages
 	if err != nil {
-		return result, err
+		return workflowResult, err
 	}
 
 	// Backup Activity
 	// unquiesce if we return timeout or app error
-	err = RunBackup(ctx, backupId, result)
+	result, err = RunBackup(ctx, backupId)
+	workflowResult.Code = result.Code
+	workflowMessages = append(workflowMessages, result.Message)
+	workflowResult.Messages = workflowMessages
 
 	var timeoutErr *temporal.TimeoutError
 	var appErr *temporal.ApplicationError
 	if errors.As(err, &appErr) || errors.As(err, &timeoutErr) {
 		// UnQuiesce Activity
-		err := RunUnQuiesce(ctx, backupId, result)
-		return result, err
+		result, err := RunUnQuiesce(ctx, backupId)
+		workflowMessages = append(workflowMessages, result.Message)
+		workflowResult.Messages = workflowMessages
+		return workflowResult, err
 	} else if err != nil {
-		return result, err
+		return workflowResult, err
 	}
 
 	// UnQuiesce Activity
-	err = RunUnQuiesce(ctx, backupId, result)
+	result, err = RunUnQuiesce(ctx, backupId)
+	workflowMessages = append(workflowMessages, result.Message)
+	workflowResult.Messages = workflowMessages
 	if err != nil {
-		return result, err
+		return workflowResult, err
 	}
 
 	logger.Info("Backup workflow completed.", "result", result)
 
-	return result, nil
+	return workflowResult, nil
 }
 
-func RunQuiesce(ctx workflow.Context, backupId, result string) error {
+func RunQuiesce(ctx workflow.Context, backupId string) (Result, error) {
+	var result Result
 	backupState, _ := GetBackupState("localhost", "9977", backupId)
 	if backupState == "" || backupState == "unquiesced" {
 		customQuiesceAO := SetCustomRetryPolicy(1, 10, 10)
@@ -72,14 +87,15 @@ func RunQuiesce(ctx workflow.Context, backupId, result string) error {
 		err := workflow.ExecuteActivity(customQuiesceCTX, QuiesceActivity, backupId).Get(customQuiesceCTX, &result)
 		if err != nil {
 			logger.Error("Activity failed.", "Error", err)
-			return err
+			return result, err
 		}
 	}
 
-	return nil
+	return result, nil
 }
 
-func RunBackup(ctx workflow.Context, backupId, result string) error {
+func RunBackup(ctx workflow.Context, backupId string) (Result, error) {
+	var result Result
 	backupState, _ := GetBackupState("localhost", "9977", backupId)
 	if backupState == "" || backupState == "quiesced" {
 		customBackupAO := SetCustomRetryPolicy(1, 10, 1)
@@ -89,14 +105,15 @@ func RunBackup(ctx workflow.Context, backupId, result string) error {
 		err := workflow.ExecuteActivity(customUnBackupCTX, BackupActivity, backupId).Get(customUnBackupCTX, &result)
 		if err != nil {
 			logger.Error("Activity failed.", "Error", err)
-			return err
+			return result, err
 		}
 	}
 
-	return nil
+	return result, nil
 }
 
-func RunUnQuiesce(ctx workflow.Context, backupId, result string) error {
+func RunUnQuiesce(ctx workflow.Context, backupId string) (Result, error) {
+	var result Result
 	backupState, _ := GetBackupState("localhost", "9977", backupId)
 	if backupState == "backup" || backupState == "quiesced" {
 		customUnQuiesceAO := SetCustomRetryPolicy(1, 10, 10)
@@ -106,11 +123,11 @@ func RunUnQuiesce(ctx workflow.Context, backupId, result string) error {
 		err := workflow.ExecuteActivity(customUnQuiesceCTX, UnQuiesceActivity, backupId).Get(customUnQuiesceCTX, &result)
 		if err != nil {
 			logger.Error("Activity failed.", "Error", err)
-			return err
+			return result, err
 		}
 	}
 
-	return nil
+	return result, nil
 }
 
 func SetCustomRetryPolicy(retryIntervalSeconds, maxIntervalSeconds, maxAttempts int) workflow.ActivityOptions {
