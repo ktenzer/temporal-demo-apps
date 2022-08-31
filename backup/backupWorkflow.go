@@ -41,9 +41,9 @@ func Workflow(ctx workflow.Context, backupId string) (string, error) {
 	// unquiesce if we return timeout or app error
 	err = RunBackup(ctx, backupId, result)
 
-	//var timeoutErr *temporal.TimeoutError
+	var timeoutErr *temporal.TimeoutError
 	var appErr *temporal.ApplicationError
-	if errors.As(err, &appErr) {
+	if errors.As(err, &appErr) || errors.As(err, &timeoutErr) {
 		// UnQuiesce Activity
 		err := RunUnQuiesce(ctx, backupId, result)
 		return result, err
