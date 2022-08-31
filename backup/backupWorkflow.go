@@ -1,6 +1,7 @@
 package backup
 
 import (
+	"errors"
 	"time"
 
 	"go.temporal.io/sdk/temporal"
@@ -45,13 +46,32 @@ func Workflow(ctx workflow.Context, backupId string) (string, error) {
 	}
 
 	// Backup Activity
+	// want to run unquiesce if max retries or duration is reached?
 	backupState, _ = GetBackupState("localhost", "9977", backupId)
 	if backupState == "" || backupState == "quiesced" {
-		customBackupAO := SetCustomRetryPolicy(1, 10, 10)
+		customBackupAO := SetCustomRetryPolicy(1, 10, 1)
 		customBackupCTX := workflow.WithActivityOptions(ctx, customBackupAO)
 		logger = workflow.GetLogger(customBackupCTX)
 
 		err := workflow.ExecuteActivity(customBackupCTX, BackupActivity, backupId).Get(customBackupCTX, &result)
+
+		var timeoutErr *temporal.ApplicationError
+		if errors.As(err, &timeoutErr) {
+			// UnQuiesce Activity
+			backupState, _ = GetBackupState("localhost", "9977", backupId)
+			if backupState == "backup" || backupState == "quiesced" {
+				customUnQuiesceAO := SetCustomRetryPolicy(1, 10, 10)
+				customUnQuiesceCTX := workflow.WithActivityOptions(ctx, customUnQuiesceAO)
+				logger = workflow.GetLogger(customUnQuiesceCTX)
+
+				err := workflow.ExecuteActivity(customUnQuiesceCTX, UnQuiesceActivity, backupId).Get(customUnQuiesceCTX, &result)
+				if err != nil {
+					logger.Error("Activity failed.", "Error", err)
+					return "", err
+				}
+			}
+		}
+
 		if err != nil {
 			logger.Error("Activity failed.", "Error", err)
 			return "", err
