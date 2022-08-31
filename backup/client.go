@@ -11,9 +11,9 @@ type Result struct {
 	Message string `json:"message"`
 }
 
-func Quiesce(hostname, port string) (Result, error) {
+func Quiesce(hostname, port, backupId string) (Result, error) {
 	var result Result
-	req, err := http.NewRequest("GET", "http://"+hostname+":"+port+"/quiesce", nil)
+	req, err := http.NewRequest("POST", "http://"+hostname+":"+port+"/quiesce/"+backupId, nil)
 
 	if err != nil {
 		return result, err
@@ -40,9 +40,9 @@ func Quiesce(hostname, port string) (Result, error) {
 	return result, nil
 }
 
-func Backup(hostname, port string) (Result, error) {
+func Backup(hostname, port, backupId string) (Result, error) {
 	var result Result
-	req, err := http.NewRequest("GET", "http://"+hostname+":"+port+"/backup", nil)
+	req, err := http.NewRequest("POST", "http://"+hostname+":"+port+"/backup/"+backupId, nil)
 
 	if err != nil {
 		return result, err
@@ -69,9 +69,9 @@ func Backup(hostname, port string) (Result, error) {
 	return result, nil
 }
 
-func UnQuiesce(hostname, port string) (Result, error) {
+func UnQuiesce(hostname, port, backupId string) (Result, error) {
 	var result Result
-	req, err := http.NewRequest("GET", "http://"+hostname+":"+port+"/unquiesce", nil)
+	req, err := http.NewRequest("POST", "http://"+hostname+":"+port+"/unquiesce/"+backupId, nil)
 
 	if err != nil {
 		return result, err
@@ -96,4 +96,33 @@ func UnQuiesce(hostname, port string) (Result, error) {
 	}
 
 	return result, nil
+}
+
+func GetBackupState(hostname, port, backupId string) (string, error) {
+	var backupState string
+	req, err := http.NewRequest("POST", "http://"+hostname+":"+port+"/getBackupState/"+backupId, nil)
+
+	if err != nil {
+		return backupState, err
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+	client := &http.Client{}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return backupState, err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode == 200 {
+		if err := json.NewDecoder(resp.Body).Decode(&backupState); err != nil {
+			return backupState, err
+		}
+	} else {
+		return backupState, errors.New("Http Status Error [" + resp.Status + "]")
+	}
+
+	return backupState, nil
 }

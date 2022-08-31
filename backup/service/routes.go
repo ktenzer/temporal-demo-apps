@@ -43,20 +43,26 @@ var routes = Routes{
 	},
 	Route{
 		"Quiesce",
-		"GET",
-		"/quiesce",
+		"POST",
+		"/quiesce/{backupId}",
 		Quiesce,
 	},
 	Route{
 		"UnQuiesce",
-		"GET",
-		"/unquiesce",
+		"POST",
+		"/unquiesce/{backupId}",
 		UnQuiesce,
 	},
 	Route{
 		"Backup",
-		"GET",
-		"/backup",
+		"POST",
+		"/backup/{backupId}",
 		Backup,
+	},
+	Route{
+		"GetBackupState",
+		"POST",
+		"/getBackupState/{backupId}",
+		GetBackupState,
 	},
 }

@@ -7,6 +7,7 @@ import (
 
 	"crypto/tls"
 
+	"github.com/google/uuid"
 	"github.com/temporal-demo-apps/backup"
 	"go.temporal.io/sdk/client"
 )
@@ -49,12 +50,14 @@ func main() {
 		TaskQueue: "backup-sample",
 	}
 
-	we, err := c.ExecuteWorkflow(context.Background(), workflowOptions, backup.Workflow, "Temporal")
+	backupId := uuid.New().String()
+
+	we, err := c.ExecuteWorkflow(context.Background(), workflowOptions, backup.Workflow, backupId)
 	if err != nil {
 		log.Fatalln("Unable to execute workflow", err)
 	}
 
-	log.Println("Started workflow", "WorkflowID", we.GetID(), "RunID", we.GetRunID())
+	log.Println("Started workflow", "BackupId", backupId, "WorkflowID", we.GetID(), "RunID", we.GetRunID())
 
 	// Synchronously wait for the workflow completion.
 	var result string
