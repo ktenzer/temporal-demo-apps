@@ -75,7 +75,17 @@ func ChaosMonkey(msg string) Result {
 		sleepTimer := rand.Intn(1250)
 		time.Sleep(time.Duration(sleepTimer) * time.Millisecond)
 
-		code := rand.Intn(3)
+		var code int
+		rand.Seed(time.Now().UnixNano())
+		if msg == "Backup" {
+			min := 0
+			max := 1
+			code = rand.Intn(max-min+1) + min
+		} else {
+			min := 0
+			max := 5
+			code = rand.Intn(max-min+1) + min
+		}
 
 		result.Code = code
 		result.Message = msg
