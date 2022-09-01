@@ -6,16 +6,6 @@ import (
 	"net/http"
 )
 
-type Result struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-}
-
-type WorkflowResult struct {
-	Code     int      `json:"code"`
-	Messages []string `json:"message"`
-}
-
 func Quiesce(hostname, port, backupId string) (Result, error) {
 	var result Result
 	req, err := http.NewRequest("POST", "http://"+hostname+":"+port+"/quiesce/"+backupId, nil)

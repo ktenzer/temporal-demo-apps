@@ -11,10 +11,6 @@ import (
 	_ "go.temporal.io/sdk/contrib/tools/workflowcheck/determinism"
 )
 
-const (
-	BackupSignalName = "startbackup"
-)
-
 func Workflow(ctx workflow.Context, backupId string) (WorkflowResult, error) {
 	var workflowResult WorkflowResult
 	var workflowMessages []string
@@ -80,7 +76,7 @@ func RunQuiesce(ctx workflow.Context, backupId string) (Result, error) {
 	var result Result
 	backupState, _ := GetBackupState("localhost", "9977", backupId)
 	if backupState == "" || backupState == "unquiesced" {
-		customQuiesceAO := SetCustomRetryPolicy(1, 10, 10)
+		customQuiesceAO := SetCustomRetryPolicy(1, 30, 30)
 		customQuiesceCTX := workflow.WithActivityOptions(ctx, customQuiesceAO)
 		logger := workflow.GetLogger(customQuiesceCTX)
 
@@ -116,7 +112,7 @@ func RunUnQuiesce(ctx workflow.Context, backupId string) (Result, error) {
 	var result Result
 	backupState, _ := GetBackupState("localhost", "9977", backupId)
 	if backupState == "backup" || backupState == "quiesced" {
-		customUnQuiesceAO := SetCustomRetryPolicy(1, 10, 10)
+		customUnQuiesceAO := SetCustomRetryPolicy(1, 30, 30)
 		customUnQuiesceCTX := workflow.WithActivityOptions(ctx, customUnQuiesceAO)
 		logger := workflow.GetLogger(customUnQuiesceCTX)
 

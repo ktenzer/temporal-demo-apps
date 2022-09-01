@@ -50,12 +50,11 @@ func main() {
 	}
 	defer c.Close()
 
+	backupId := uuid.New().String()
 	workflowOptions := client.StartWorkflowOptions{
-		ID:        "backup_sample_workflowID",
+		ID:        "backup_sample_" + backupId,
 		TaskQueue: "backup-sample",
 	}
-
-	backupId := uuid.New().String()
 
 	we, err := c.ExecuteWorkflow(context.Background(), workflowOptions, backup.Workflow, backupId)
 	if err != nil {

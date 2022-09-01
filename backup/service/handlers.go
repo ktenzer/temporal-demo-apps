@@ -10,20 +10,11 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/temporal-demo-apps/backup"
 )
 
-type Status struct {
-	Msg     string `json:"msg"`
-	Version string `json:"version"`
-}
-
-type Result struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-}
-
 func GetStatus(w http.ResponseWriter, r *http.Request) {
-	var status Status
+	var status backup.Status
 	status.Msg = "OK"
 	status.Version = "1.0.0"
 
@@ -68,8 +59,8 @@ func Backup(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(result)
 }
 
-func ChaosMonkey(msg string) Result {
-	var result Result
+func ChaosMonkey(msg string) backup.Result {
+	var result backup.Result
 
 	if os.Getenv("ENABLE_CHAOS_MONKEY") == "true" {
 		sleepTimer := rand.Intn(1250)
