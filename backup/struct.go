@@ -11,6 +11,8 @@ type Result struct {
 }
 
 type WorkflowResult struct {
+	Id       string   `json:"id"`
 	Code     int      `json:"code"`
 	Messages []string `json:"message"`
+	State    string   `json:"state"`
 }
