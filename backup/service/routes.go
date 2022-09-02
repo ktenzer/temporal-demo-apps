@@ -59,10 +59,4 @@ var routes = Routes{
 		"/backup/{backupId}",
 		Backup,
 	},
-	Route{
-		"GetBackupState",
-		"POST",
-		"/getBackupState/{backupId}",
-		GetBackupState,
-	},
 }

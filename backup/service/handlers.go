@@ -21,21 +21,11 @@ func GetStatus(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(status)
 }
 
-func GetBackupState(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	var backupId string = params["backupId"]
-	backupState, _ := backupState.Load(backupId)
-
-	json.NewEncoder(w).Encode(backupState)
-}
-
 func Quiesce(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	var backupId string = params["backupId"]
 
-	backupState.Store(backupId, "quiesced")
-
-	result := ChaosMonkey("Quiesce")
+	result := ChaosMonkey("Quiesce", backupId)
 	json.NewEncoder(w).Encode(result)
 }
 
@@ -43,9 +33,7 @@ func UnQuiesce(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	var backupId string = params["backupId"]
 
-	backupState.Store(backupId, "unquiesced")
-
-	result := ChaosMonkey("UnQuiesce")
+	result := ChaosMonkey("UnQuiesce", backupId)
 	json.NewEncoder(w).Encode(result)
 }
 
@@ -53,13 +41,11 @@ func Backup(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	var backupId string = params["backupId"]
 
-	backupState.Store(backupId, "backup")
-
-	result := ChaosMonkey("Backup")
+	result := ChaosMonkey("Backup", backupId)
 	json.NewEncoder(w).Encode(result)
 }
 
-func ChaosMonkey(msg string) backup.Result {
+func ChaosMonkey(msg, backupId string) backup.Result {
 	var result backup.Result
 
 	if os.Getenv("ENABLE_CHAOS_MONKEY") == "true" {
@@ -86,7 +72,7 @@ func ChaosMonkey(msg string) backup.Result {
 	}
 
 	errorCode := strconv.Itoa(result.Code)
-	fmt.Println("DEBUG: Message[" + result.Message + "] Code[" + errorCode + "]")
+	fmt.Println("DEBUG: Id[" + backupId + "] Message[" + result.Message + "] Code[" + errorCode + "]")
 
 	return result
 }

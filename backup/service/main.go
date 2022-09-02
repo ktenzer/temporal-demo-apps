@@ -6,12 +6,10 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 )
 
 var port string = "9977"
-var backupState sync.Map
 
 func main() {
 	router := NewRouter()

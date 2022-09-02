@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
@@ -11,7 +12,24 @@ import (
 	_ "go.temporal.io/sdk/contrib/tools/workflowcheck/determinism"
 )
 
-func Workflow(ctx workflow.Context, backupId string) (WorkflowResult, error) {
+func Workflow(ctx workflow.Context, backupId string) (string, error) {
+
+	childWorkflowOptions := workflow.ChildWorkflowOptions{
+		ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
+	}
+	ctx = workflow.WithChildOptions(ctx, childWorkflowOptions)
+
+	childWorkflowFuture := workflow.ExecuteChildWorkflow(ctx, ChildWorkflow, backupId)
+	// Wait for the Child Workflow Execution to spawn
+	var childWE workflow.Execution
+	if err := childWorkflowFuture.GetChildWorkflowExecution().Get(ctx, &childWE); err != nil {
+		return "Childworkflow failed to start!", err
+	}
+
+	return "Childworkflow started successfully", nil
+}
+
+func ChildWorkflow(ctx workflow.Context, backupId string) (WorkflowResult, error) {
 	var workflowResult WorkflowResult
 	var workflowMessages []string
 	workflowResult.Id = backupId
