@@ -7,7 +7,6 @@ import (
 
 	"crypto/tls"
 
-	"github.com/google/uuid"
 	"github.com/temporal-demo-apps/backup"
 	"go.temporal.io/sdk/client"
 )
@@ -45,24 +44,26 @@ func main() {
 	}
 	defer c.Close()
 
-	backupId := uuid.New().String()
+	//backupId := uuid.New().String()
 	workflowOptions := client.StartWorkflowOptions{
-		ID:        "backup_sample_" + backupId,
+		ID:        "backup_sample",
 		TaskQueue: "backup-sample",
 	}
 
-	we, err := c.ExecuteWorkflow(context.Background(), workflowOptions, backup.Workflow, backupId)
+	we, err := c.ExecuteWorkflow(context.Background(), workflowOptions, backup.SignalWorkflow)
 	if err != nil {
 		log.Fatalln("Unable to execute workflow", err)
 	}
 
-	log.Println("Started workflow", "BackupId", backupId, "WorkflowID", we.GetID(), "RunID", we.GetRunID())
+	log.Println("Started workflow", "WorkflowID", we.GetID(), "RunID", we.GetRunID())
 
-	// Synchronously wait for the workflow completion.
-	var result string
-	err = we.Get(context.Background(), &result)
-	if err != nil {
-		log.Fatalln("Unable get workflow result", err)
-	}
-	log.Println("Workflow result:", result)
+	/*
+		// Synchronously wait for the workflow completion.
+		var result string
+		err = we.Get(context.Background(), &result)
+		if err != nil {
+			log.Fatalln("Unable get workflow result", err)
+		}
+		log.Println("Workflow result:", result)
+	*/
 }

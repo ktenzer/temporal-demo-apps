@@ -1,19 +1,24 @@
 package main
 
 import (
+	"context"
 	"log"
-
-	"crypto/tls"
 	"os"
 
-	"go.temporal.io/sdk/client"
-	"go.temporal.io/sdk/worker"
+	"crypto/tls"
 
-	"github.com/temporal-demo-apps/backup"
+	"github.com/google/uuid"
+	"go.temporal.io/sdk/client"
 )
 
+type BackupSignal struct {
+	Action   string `json:"action"`
+	AppName  string `json:"appName"`
+	BackupId string `json:"backupId"`
+}
+
 func main() {
-	// The client and worker are heavyweight objects that should be created once per process.
+	// The client is a heavyweight object that should be created once per process.
 	const clientCertPath string = "/home/ktenzer/temporal/certs/ca.pem"
 	const clientKeyPath string = "/home/ktenzer/temporal/certs/ca.key"
 
@@ -22,8 +27,8 @@ func main() {
 	var cert tls.Certificate
 
 	_, isMTLS := os.LookupEnv("MTLS")
-
 	if isMTLS {
+
 		cert, err = tls.LoadX509KeyPair(clientCertPath, clientKeyPath)
 		if err != nil {
 			log.Fatalln("Unable to load certs", err)
@@ -45,16 +50,22 @@ func main() {
 	}
 	defer c.Close()
 
-	w := worker.New(c, "backup-sample", worker.Options{})
+	// loop through a bunch of apps, creating signal for each
+	apps := []string{"Oracle", "MySQL", "PostgreSQL", "Cassandra", "Couchbase"}
+	for _, app := range apps {
+		backupId := uuid.New().String()
 
-	w.RegisterWorkflow(backup.ChildWorkflow)
-	w.RegisterWorkflow(backup.SignalWorkflow)
-	w.RegisterActivity(backup.QuiesceActivity)
-	w.RegisterActivity(backup.BackupActivity)
-	w.RegisterActivity(backup.UnQuiesceActivity)
+		signal := BackupSignal{
+			Action:   "RunBackup",
+			AppName:  app,
+			BackupId: backupId,
+		}
+		err = c.SignalWorkflow(context.Background(), "backup_sample", "", "start-backup", signal)
+		if err != nil {
+			log.Fatalln("Error sending the Signal", err)
+			return
+		}
 
-	err = w.Run(worker.InterruptCh())
-	if err != nil {
-		log.Fatalln("Unable to start worker", err)
+		log.Println("Started workflow", "AppName", app, "BackupId", backupId)
 	}
 }

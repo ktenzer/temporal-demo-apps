@@ -4,7 +4,6 @@ import (
 	"errors"
 	"time"
 
-	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
@@ -12,27 +11,11 @@ import (
 	_ "go.temporal.io/sdk/contrib/tools/workflowcheck/determinism"
 )
 
-func Workflow(ctx workflow.Context, backupId string) (string, error) {
-
-	childWorkflowOptions := workflow.ChildWorkflowOptions{
-		ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-	}
-	ctx = workflow.WithChildOptions(ctx, childWorkflowOptions)
-
-	childWorkflowFuture := workflow.ExecuteChildWorkflow(ctx, ChildWorkflow, backupId)
-	// Wait for the Child Workflow Execution to spawn
-	var childWE workflow.Execution
-	if err := childWorkflowFuture.GetChildWorkflowExecution().Get(ctx, &childWE); err != nil {
-		return "Childworkflow failed to start!", err
-	}
-
-	return "Childworkflow started successfully", nil
-}
-
-func ChildWorkflow(ctx workflow.Context, backupId string) (WorkflowResult, error) {
+func ChildWorkflow(ctx workflow.Context, signal BackupSignal) (WorkflowResult, error) {
 	var workflowResult WorkflowResult
 	var workflowMessages []string
-	workflowResult.Id = backupId
+	workflowResult.Id = signal.BackupId
+	workflowResult.AppName = signal.AppName
 
 	retryPolicy := &temporal.RetryPolicy{
 		InitialInterval:        time.Second,
@@ -49,7 +32,7 @@ func ChildWorkflow(ctx workflow.Context, backupId string) (WorkflowResult, error
 	ctx = workflow.WithActivityOptions(ctx, ao)
 
 	logger := workflow.GetLogger(ctx)
-	logger.Info("HelloWorld workflow started", "backupId", backupId)
+	logger.Info("HelloWorld workflow started", "appName", signal.AppName, "backupId", signal.BackupId)
 
 	// Quiesce Activity
 	workflowResult, msg, err := RunQuiesce(ctx, workflowResult)
