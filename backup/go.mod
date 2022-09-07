@@ -5,6 +5,7 @@ go 1.18
 require (
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
+	go.temporal.io/api v1.11.0
 	go.temporal.io/sdk v1.16.0
 	go.temporal.io/sdk/contrib/tools/workflowcheck v0.0.0-20220819183257-3d111e36d1b2
 )
@@ -23,7 +24,6 @@ require (
 	github.com/robfig/cron v1.2.0 // indirect
 	github.com/stretchr/objx v0.4.0 // indirect
 	github.com/stretchr/testify v1.8.0 // indirect
-	go.temporal.io/api v1.11.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	golang.org/x/net v0.0.0-20220728181054-f92ba40d432d // indirect
 	golang.org/x/sys v0.0.0-20220728004956-3c1f35247d10 // indirect

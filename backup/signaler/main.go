@@ -8,14 +8,9 @@ import (
 	"crypto/tls"
 
 	"github.com/google/uuid"
+	"github.com/temporal-demo-apps/backup"
 	"go.temporal.io/sdk/client"
 )
-
-type BackupSignal struct {
-	Action   string `json:"action"`
-	AppName  string `json:"appName"`
-	BackupId string `json:"backupId"`
-}
 
 func main() {
 	// The client is a heavyweight object that should be created once per process.
@@ -55,7 +50,7 @@ func main() {
 	for _, app := range apps {
 		backupId := uuid.New().String()
 
-		signal := BackupSignal{
+		signal := backup.BackupSignal{
 			Action:   "RunBackup",
 			AppName:  app,
 			BackupId: backupId,
