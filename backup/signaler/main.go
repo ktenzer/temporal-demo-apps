@@ -48,9 +48,12 @@ func main() {
 
 	// loop through a bunch of apps, creating signal for each
 	apps := []string{"Oracle", "MySQL", "PostgreSQL", "Cassandra", "Couchbase"}
-	backupId := uuid.New().String()
+	queryStatusMap := make(map[string]string)
 
 	for _, app := range apps {
+		backupId := uuid.New().String()
+		queryStatusMap[app] = backupId
+
 		err := SendSignal(c, app, backupId)
 		if err != nil {
 			log.Fatalln("Error sending the Signal", err)
@@ -59,7 +62,7 @@ func main() {
 	}
 
 	// loop through a bunch of apps, querying till workflow complete
-	for _, app := range apps {
+	for app, backupId := range queryStatusMap {
 		workflowId := "backup_sample_" + app + "_" + backupId
 
 		for {
