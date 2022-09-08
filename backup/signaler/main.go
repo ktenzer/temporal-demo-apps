@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"time"
 
 	"crypto/tls"
 
@@ -47,20 +48,58 @@ func main() {
 
 	// loop through a bunch of apps, creating signal for each
 	apps := []string{"Oracle", "MySQL", "PostgreSQL", "Cassandra", "Couchbase"}
-	for _, app := range apps {
-		backupId := uuid.New().String()
+	backupId := uuid.New().String()
 
-		signal := backup.BackupSignal{
-			Action:   "RunBackup",
-			AppName:  app,
-			BackupId: backupId,
-		}
-		err = c.SignalWorkflow(context.Background(), "backup_sample", "", "start-backup", signal)
+	for _, app := range apps {
+		err := SendSignal(c, app, backupId)
 		if err != nil {
 			log.Fatalln("Error sending the Signal", err)
-			return
+			break
 		}
-
-		log.Println("Started workflow", "AppName", app, "BackupId", backupId)
 	}
+
+	// loop through a bunch of apps, querying till workflow complete
+	for _, app := range apps {
+		workflowId := "backup_sample_" + app + "_" + backupId
+
+		for {
+			time.Sleep(1 * time.Second)
+			result := SendQuery(c, workflowId)
+
+			if result == "succeeded" || result == "failed" {
+				log.Println("Workflow["+workflowId+"] Completed with result", result)
+				break
+			}
+		}
+	}
+}
+
+func SendSignal(c client.Client, app, backupId string) error {
+	workflowId := "backup_sample_" + app + "_" + backupId
+	signal := backup.BackupSignal{
+		Action:   "RunBackup",
+		AppName:  app,
+		BackupId: backupId,
+	}
+	err := c.SignalWorkflow(context.Background(), "backup_sample", "", "start-backup", signal)
+	if err != nil {
+		return err
+	}
+
+	log.Println("Workflow[" + workflowId + "] Started")
+
+	return nil
+}
+func SendQuery(c client.Client, workflowId string) interface{} {
+
+	resp, err := c.QueryWorkflow(context.Background(), workflowId, "", "state")
+	if err != nil {
+		log.Fatalln("Unable to query workflow", err)
+	}
+	var result interface{}
+	if err := resp.Get(&result); err != nil {
+		log.Fatalln("Unable to decode query result", err)
+	}
+
+	return result
 }
