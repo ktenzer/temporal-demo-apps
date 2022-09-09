@@ -19,7 +19,8 @@ type WorkflowResult struct {
 }
 
 type BackupSignal struct {
-	Action   string `json:"action"`
-	AppName  string `json:"appName"`
-	BackupId string `json:"backupId"`
+	Action       string `json:"action"`
+	AppName      string `json:"appName"`
+	BackupId     string `json:"backupId"`
+	CronSchedule string `json:"cronSchedule"`
 }

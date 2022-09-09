@@ -4,11 +4,9 @@ import (
 	"context"
 	"log"
 	"os"
-	"time"
 
 	"crypto/tls"
 
-	"github.com/google/uuid"
 	"github.com/temporal-demo-apps/backup"
 	"go.temporal.io/sdk/client"
 )
@@ -46,50 +44,30 @@ func main() {
 	}
 	defer c.Close()
 
-	// loop through a bunch of apps, creating signal for each
-	apps := []string{"Oracle", "PostgreSQL", "Cassandra", "Couchbase"}
-	queryStatusMap := make(map[string]string)
+	app := "MySQL"
+	backupId := "81e68a74-c2ac-438f-a8ce-3d6cba60c754"
 
-	for _, app := range apps {
-		backupId := uuid.New().String()
-		queryStatusMap[app] = backupId
-
-		err := SendSignal(c, app, backupId)
-		if err != nil {
-			log.Fatalln("Error sending the Signal", err)
-			break
-		}
-	}
-
-	// loop through a bunch of apps, querying till workflow complete
-	for app, backupId := range queryStatusMap {
-		workflowId := "backup_sample_" + app + "_" + backupId
-
-		for {
-			time.Sleep(1 * time.Second)
-			result := SendQuery(c, workflowId)
-
-			if result == "succeeded" || result == "failed" {
-				log.Println("Workflow["+workflowId+"] Completed with result", result)
-				break
-			}
-		}
+	err = SendSignal(c, app, backupId)
+	if err != nil {
+		log.Fatalln("Error sending the Signal", err)
 	}
 }
 
 func SendSignal(c client.Client, app, backupId string) error {
 	workflowId := "backup_sample_" + app + "_" + backupId
 	signal := backup.BackupSignal{
-		Action:   "RunBackup",
-		AppName:  app,
-		BackupId: backupId,
+		Action:       "ScheduleBackup",
+		AppName:      app,
+		BackupId:     backupId,
+		CronSchedule: "* * * * *",
 	}
+
 	err := c.SignalWorkflow(context.Background(), "backup_sample", "", "start-backup", signal)
 	if err != nil {
 		return err
 	}
 
-	log.Println("Workflow[" + workflowId + "] Started")
+	log.Println("Workflow[" + workflowId + "] Scheduled [" + signal.CronSchedule + "]")
 
 	return nil
 }

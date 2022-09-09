@@ -2,6 +2,7 @@ package backup
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"go.temporal.io/api/enums/v1"
@@ -40,36 +41,38 @@ func SignalWorkflow(ctx workflow.Context) (string, error) {
 		channel.Receive(ctx, &signal)
 	})
 	selector.Select(ctx)
-	if len(signal.Action) > 0 && len(signal.AppName) > 0 && len(signal.BackupId) > 0 && signal.Action != "RunBackup" {
-		return "error", errors.New("Received incorrect signal")
+	if len(signal.Action) == 0 || len(signal.AppName) == 0 || len(signal.BackupId) == 0 {
+		return "error", errors.New("Received empty signal")
 	}
 
-	// execute child workflow
-	err := SpawnChildWorkflow(ctx, signal)
-	if err != nil {
-		return "Childworkflow failed to start!", err
-	}
-
-	// drain any signals that come during continue-as-new
-	for {
-		ok := signalChan.ReceiveAsync(&signal)
-
-		if !ok {
-			break
-		}
-		workflow.GetLogger(ctx).Info("Received signal!", "signal", "start-backup", "RunBackup", signal)
-
-		// execute child worklflow
-		err := SpawnChildWorkflow(ctx, signal)
+	if signal.Action == "RunBackup" {
+		err := SpawnManualChildWorkflow(ctx, signal)
 		if err != nil {
 			return "Childworkflow failed to start!", err
 		}
+
+		err = DrainManualSignals(ctx, signal, signalChan)
+		if err != nil {
+			return "Childworkflow failed to start!", err
+		}
+	} else if signal.Action == "ScheduleBackup" {
+		err := SpawnScheduleChildWorkflow(ctx, signal)
+		if err != nil {
+			return "Childworkflow failed to start!", err
+		}
+
+		err = DrainScheduledSignals(ctx, signal, signalChan)
+		if err != nil {
+			return "Childworkflow failed to start!", err
+		}
+	} else {
+		return "error", errors.New("Received incorrect signal, only RunBackup and ScheduleBackup are supported!")
 	}
 
 	return "success", workflow.NewContinueAsNewError(ctx, SignalWorkflow)
 }
 
-func SpawnChildWorkflow(ctx workflow.Context, signal BackupSignal) error {
+func SpawnManualChildWorkflow(ctx workflow.Context, signal BackupSignal) error {
 	childWorkflowOptions := workflow.ChildWorkflowOptions{
 		WorkflowID:        "backup_sample_" + signal.AppName + "_" + signal.BackupId,
 		ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
@@ -82,6 +85,67 @@ func SpawnChildWorkflow(ctx workflow.Context, signal BackupSignal) error {
 	var childWE workflow.Execution
 	if err := childWorkflowFuture.GetChildWorkflowExecution().Get(ctx, &childWE); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func SpawnScheduleChildWorkflow(ctx workflow.Context, signal BackupSignal) error {
+	childWorkflowOptions := workflow.ChildWorkflowOptions{
+		WorkflowID:        "backup_sample_" + signal.AppName + "_" + signal.BackupId,
+		CronSchedule:      signal.CronSchedule,
+		ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
+	}
+
+	ctx = workflow.WithChildOptions(ctx, childWorkflowOptions)
+
+	childWorkflowFuture := workflow.ExecuteChildWorkflow(ctx, ChildWorkflow, signal)
+	// Wait for the Child Workflow Execution to spawn
+	var childWE workflow.Execution
+
+	//TODO need check if workflow is already running
+	if err := childWorkflowFuture.GetChildWorkflowExecution().Get(ctx, &childWE); err != nil {
+		fmt.Println("ChildWorkflow execution error[" + err.Error() + "]")
+	}
+
+	return nil
+}
+
+func DrainManualSignals(ctx workflow.Context, signal BackupSignal, signalChan workflow.ReceiveChannel) error {
+	// drain any signals that come during continue-as-new
+	for {
+		ok := signalChan.ReceiveAsync(&signal)
+
+		if !ok {
+			break
+		}
+		workflow.GetLogger(ctx).Info("Received signal!", "signal", "start-backup", "RunBackup", signal)
+
+		// execute child worklflow
+		err := SpawnManualChildWorkflow(ctx, signal)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func DrainScheduledSignals(ctx workflow.Context, signal BackupSignal, signalChan workflow.ReceiveChannel) error {
+	// drain any signals that come during continue-as-new
+	for {
+		ok := signalChan.ReceiveAsync(&signal)
+
+		if !ok {
+			break
+		}
+		workflow.GetLogger(ctx).Info("Received signal!", "signal", "start-backup", "ScheduleBackup", signal)
+
+		// execute child worklflow
+		err := SpawnScheduleChildWorkflow(ctx, signal)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
