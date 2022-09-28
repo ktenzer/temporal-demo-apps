@@ -17,6 +17,10 @@ func ChildWorkflow(ctx workflow.Context, signal BackupSignal) (WorkflowResult, e
 	workflowResult.Id = signal.BackupId
 	workflowResult.AppName = signal.AppName
 
+	// Setup logger
+	logger := workflow.GetLogger(ctx)
+	logger.Info("Backup workflow started", "appName", signal.AppName, "backupId", signal.BackupId)
+
 	// Default retry policy
 	retryPolicy := &temporal.RetryPolicy{
 		InitialInterval:        time.Second,
@@ -26,6 +30,16 @@ func ChildWorkflow(ctx workflow.Context, signal BackupSignal) (WorkflowResult, e
 		NonRetryableErrorTypes: []string{"bad-bug"}, // empty
 	}
 
+	// Update search attributes BackupType
+	attributes := map[string]interface{}{
+		"BackupType": signal.AppName,
+	}
+	err := workflow.UpsertSearchAttributes(ctx, attributes)
+	if err != nil {
+		logger.Error("Upsert search attributes failed: " + err.Error())
+		return workflowResult, err
+	}
+
 	// Activity options
 	ao := workflow.ActivityOptions{
 		StartToCloseTimeout: 10 * time.Second,
@@ -33,17 +47,15 @@ func ChildWorkflow(ctx workflow.Context, signal BackupSignal) (WorkflowResult, e
 	}
 	ctx = workflow.WithActivityOptions(ctx, ao)
 
-	// Setup logger
-	logger := workflow.GetLogger(ctx)
 	logger.Info("Backup workflow started", "appName", signal.AppName, "backupId", signal.BackupId)
 
 	// Setup query handler
 	queryResult := "started"
-	err := workflow.SetQueryHandler(ctx, "state", func(input []byte) (string, error) {
+	err = workflow.SetQueryHandler(ctx, "state", func(input []byte) (string, error) {
 		return queryResult, nil
 	})
 	if err != nil {
-		logger.Info("SetQueryHandler failed: " + err.Error())
+		logger.Error("SetQueryHandler failed: " + err.Error())
 		return workflowResult, err
 	}
 	queryResult = "waiting for activities to start"
@@ -54,6 +66,11 @@ func ChildWorkflow(ctx workflow.Context, signal BackupSignal) (WorkflowResult, e
 	workflowResult.Messages = workflowMessages
 	if err != nil {
 		queryResult = "failed"
+		err = UpdateBackupStatusSearchAttribute(ctx, queryResult)
+		if err != nil {
+			return workflowResult, err
+		}
+
 		return workflowResult, err
 	}
 	queryResult = "quiesce suceeded"
@@ -74,9 +91,19 @@ func ChildWorkflow(ctx workflow.Context, signal BackupSignal) (WorkflowResult, e
 		workflowResult.Messages = workflowMessages
 
 		queryResult = "failed"
+		err = UpdateBackupStatusSearchAttribute(ctx, queryResult)
+		if err != nil {
+			return workflowResult, err
+		}
+
 		return workflowResult, err
 	} else if err != nil {
 		queryResult = "failed"
+		err = UpdateBackupStatusSearchAttribute(ctx, queryResult)
+		if err != nil {
+			return workflowResult, err
+		}
+
 		return workflowResult, err
 	}
 	queryResult = "backup succeeded"
@@ -88,10 +115,32 @@ func ChildWorkflow(ctx workflow.Context, signal BackupSignal) (WorkflowResult, e
 
 	if err != nil {
 		queryResult = "failed"
+		err = UpdateBackupStatusSearchAttribute(ctx, queryResult)
+		if err != nil {
+			return workflowResult, err
+		}
+
 		return workflowResult, err
 	}
 	queryResult = "succeeded"
+	err = UpdateBackupStatusSearchAttribute(ctx, queryResult)
+	if err != nil {
+		return workflowResult, err
+	}
 
 	logger.Info("Backup workflow completed.", "result", workflowResult)
 	return workflowResult, nil
+}
+
+func UpdateBackupStatusSearchAttribute(ctx workflow.Context, queryResult string) error {
+	attributes := map[string]interface{}{
+		"BackupStatus": queryResult,
+	}
+	workflow.UpsertSearchAttributes(ctx, attributes)
+	err := workflow.UpsertSearchAttributes(ctx, attributes)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

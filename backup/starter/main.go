@@ -20,9 +20,7 @@ func main() {
 	var err error
 	var cert tls.Certificate
 
-	_, isMTLS := os.LookupEnv("MTLS")
-	if isMTLS {
-
+	if os.Getenv("MTLS") == "true" {
 		cert, err = tls.LoadX509KeyPair(clientCertPath, clientKeyPath)
 		if err != nil {
 			log.Fatalln("Unable to load certs", err)
