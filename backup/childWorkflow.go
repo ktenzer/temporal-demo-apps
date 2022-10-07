@@ -35,6 +35,7 @@ func ChildWorkflow(ctx workflow.Context, signal BackupSignal) (WorkflowResult, e
 		"BackupType": signal.AppName,
 	}
 	err := workflow.UpsertSearchAttributes(ctx, attributes)
+
 	if err != nil {
 		logger.Error("Upsert search attributes failed: " + err.Error())
 		return workflowResult, err

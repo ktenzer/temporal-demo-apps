@@ -2,10 +2,10 @@ package backup
 
 import (
 	"context"
-	"errors"
 	"strconv"
 
 	"go.temporal.io/sdk/activity"
+	"go.temporal.io/sdk/temporal"
 
 	// TODO(cretz): Remove when tagged
 	_ "go.temporal.io/sdk/contrib/tools/workflowcheck/determinism"
@@ -18,11 +18,11 @@ func QuiesceActivity(ctx context.Context, backupId string) (Result, error) {
 
 	result, err := Quiesce("localhost", "9977", backupId)
 	if err != nil {
-		return result, err
+		return result, temporal.NewApplicationError("quiesce failed", "quiesce", err)
 	}
 
 	if result.Code != 0 {
-		return result, errors.New("Error Code: " + strconv.Itoa(result.Code))
+		return result, temporal.NewApplicationError("Error Code: "+strconv.Itoa(result.Code), "backup")
 	}
 
 	return result, nil
@@ -34,11 +34,11 @@ func BackupActivity(ctx context.Context, backupId string) (Result, error) {
 
 	result, err := Backup("localhost", "9977", backupId)
 	if err != nil {
-		return result, err
+		return result, temporal.NewApplicationError("backup failed", "backup", err.Error())
 	}
 
 	if result.Code != 0 {
-		return result, errors.New("Error Code: " + strconv.Itoa(result.Code))
+		return result, temporal.NewApplicationError("Error Code: "+strconv.Itoa(result.Code), "backup")
 	}
 
 	return result, nil
@@ -50,11 +50,11 @@ func UnQuiesceActivity(ctx context.Context, backupId string) (Result, error) {
 
 	result, err := UnQuiesce("localhost", "9977", backupId)
 	if err != nil {
-		return result, err
+		return result, temporal.NewApplicationError("unquiesce failed", "unquiesce", err.Error())
 	}
 
 	if result.Code != 0 {
-		return result, errors.New("Error Code: " + strconv.Itoa(result.Code))
+		return result, temporal.NewApplicationError("Error Code: "+strconv.Itoa(result.Code), "backup")
 	}
 
 	return result, nil

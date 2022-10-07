@@ -93,10 +93,8 @@ func SendSignal(c client.Client, app, backupId string) error {
 }
 func SendQuery(c client.Client, workflowId string) interface{} {
 
-	resp, err := c.QueryWorkflow(context.Background(), workflowId, "", "state")
-	if err != nil {
-		log.Fatalln("Unable to query workflow", err)
-	}
+	resp, _ := c.QueryWorkflow(context.Background(), workflowId, "", "state")
+
 	var result interface{}
 	if err := resp.Get(&result); err != nil {
 		log.Fatalln("Unable to decode query result", err)
