@@ -1,4 +1,4 @@
-module github.com/temporalio/samples-go/helloworld
+module github.com/ktenzer/temporal-demo-apps/helloworld
 
 go 1.18
 
@@ -7,7 +7,7 @@ require (
 	github.com/stretchr/testify v1.8.0
 	go.temporal.io/api v1.12.0
 	go.temporal.io/sdk v1.17.0
-	go.temporal.io/sdk/contrib/tools/workflowcheck v0.0.0-20220930203224-e6a06f25fb05
+	go.temporal.io/sdk/contrib/tools/workflowcheck v0.0.0-20221019190155-3f3eca414d26
 )
 
 require (
