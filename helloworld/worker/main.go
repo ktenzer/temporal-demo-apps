@@ -14,8 +14,6 @@ import (
 
 func main() {
 	// The client and worker are heavyweight objects that should be created once per process.
-	const clientCertPath string = "/home/ktenzer/temporal/certs/ca.pem"
-	const clientKeyPath string = "/home/ktenzer/temporal/certs/ca.key"
 
 	var c client.Client
 	var err error
@@ -23,7 +21,7 @@ func main() {
 
 	if os.Getenv("MTLS") == "true" {
 
-		cert, err = tls.LoadX509KeyPair(clientCertPath, clientKeyPath)
+		cert, err = tls.LoadX509KeyPair(os.Getenv("TEMPORAL_CERT_PATH"), os.Getenv("TEMPORAL_KEY_PATH"))
 		if err != nil {
 			log.Fatalln("Unable to load certs", err)
 		}
