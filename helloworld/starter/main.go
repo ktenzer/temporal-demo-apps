@@ -18,8 +18,12 @@ func main() {
 	var err error
 	var cert tls.Certificate
 
-	if os.Getenv("MTLS") == "true" {
-
+	if os.Getenv("MTLS") == "false" {
+		c, err = client.Dial(client.Options{
+			HostPort:  os.Getenv("TEMPORAL_HOST_URL"),
+			Namespace: os.Getenv("TEMPORAL_NAMESPACE"),
+		})
+	} else {
 		cert, err = tls.LoadX509KeyPair(os.Getenv("TEMPORAL_CERT_PATH"), os.Getenv("TEMPORAL_KEY_PATH"))
 		if err != nil {
 			log.Fatalln("Unable to load certs", err)
@@ -31,11 +35,6 @@ func main() {
 			ConnectionOptions: client.ConnectionOptions{
 				TLS: &tls.Config{Certificates: []tls.Certificate{cert}},
 			},
-		})
-	} else {
-		c, err = client.Dial(client.Options{
-			HostPort:  os.Getenv("TEMPORAL_HOST_URL"),
-			Namespace: os.Getenv("TEMPORAL_NAMESPACE"),
 		})
 	}
 
