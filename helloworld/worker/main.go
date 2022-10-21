@@ -25,7 +25,7 @@ func main() {
 			Namespace: os.Getenv("TEMPORAL_NAMESPACE"),
 		})
 	} else {
-		cert, err = tls.LoadX509KeyPair(os.Getenv("TEMPORAL_CERT_PATH"), os.Getenv("TEMPORAL_KEY_PATH"))
+		cert, err = tls.LoadX509KeyPair(os.Getenv("TEMPORAL_TLS_CERT"), os.Getenv("TEMPORAL_TLS_KEY"))
 		if err != nil {
 			log.Fatalln("Unable to load certs", err)
 		}

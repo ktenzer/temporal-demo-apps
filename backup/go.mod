@@ -1,13 +1,13 @@
-module github.com/temporal-demo-apps/backup
+module github.com/ktenzer/temporal-demo-apps/backup
 
 go 1.18
 
 require (
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
-	go.temporal.io/api v1.11.0
-	go.temporal.io/sdk v1.16.0
-	go.temporal.io/sdk/contrib/tools/workflowcheck v0.0.0-20220819183257-3d111e36d1b2
+	go.temporal.io/api v1.12.0
+	go.temporal.io/sdk v1.17.0
+	go.temporal.io/sdk/contrib/tools/workflowcheck v0.0.0-20221019190155-3f3eca414d26
 )
 
 require (
@@ -25,13 +25,13 @@ require (
 	github.com/stretchr/objx v0.4.0 // indirect
 	github.com/stretchr/testify v1.8.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
-	golang.org/x/net v0.0.0-20220728181054-f92ba40d432d // indirect
-	golang.org/x/sys v0.0.0-20220728004956-3c1f35247d10 // indirect
+	golang.org/x/net v0.0.0-20220909164309-bea034e7d591 // indirect
+	golang.org/x/sys v0.0.0-20220909162455-aba9fc2a8ff2 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	golang.org/x/tools v0.1.10 // indirect
-	google.golang.org/genproto v0.0.0-20220725144611-272f38e5d71b // indirect
-	google.golang.org/grpc v1.48.0 // indirect
+	google.golang.org/genproto v0.0.0-20220909194730-69f6226f97e5 // indirect
+	google.golang.org/grpc v1.49.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

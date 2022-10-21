@@ -9,21 +9,24 @@ import (
 	"crypto/tls"
 
 	"github.com/google/uuid"
-	"github.com/temporal-demo-apps/backup"
+	"github.com/ktenzer/temporal-demo-apps/backup"
 	"go.temporal.io/sdk/client"
 )
 
 func main() {
 	// The client is a heavyweight object that should be created once per process.
-	const clientCertPath string = "/home/ktenzer/temporal/certs/ca.pem"
-	const clientKeyPath string = "/home/ktenzer/temporal/certs/ca.key"
 
 	var c client.Client
 	var err error
 	var cert tls.Certificate
 
-	if os.Getenv("MTLS") == "true" {
-		cert, err = tls.LoadX509KeyPair(clientCertPath, clientKeyPath)
+	if os.Getenv("MTLS") == "false" {
+		c, err = client.Dial(client.Options{
+			HostPort:  os.Getenv("TEMPORAL_HOST_URL"),
+			Namespace: os.Getenv("TEMPORAL_NAMESPACE"),
+		})
+	} else {
+		cert, err = tls.LoadX509KeyPair(os.Getenv("TEMPORAL_TLS_CERT"), os.Getenv("TEMPORAL_TLS_KEY"))
 		if err != nil {
 			log.Fatalln("Unable to load certs", err)
 		}
@@ -35,8 +38,6 @@ func main() {
 				TLS: &tls.Config{Certificates: []tls.Certificate{cert}},
 			},
 		})
-	} else {
-		c, err = client.Dial(client.Options{})
 	}
 
 	if err != nil {

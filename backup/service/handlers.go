@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/temporal-demo-apps/backup"
+	"github.com/ktenzer/temporal-demo-apps/backup"
 )
 
 func GetStatus(w http.ResponseWriter, r *http.Request) {

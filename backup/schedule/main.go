@@ -7,6 +7,7 @@ import (
 
 	"crypto/tls"
 
+	"github.com/google/uuid"
 	"github.com/ktenzer/temporal-demo-apps/backup"
 	"go.temporal.io/sdk/client"
 )
@@ -43,26 +44,42 @@ func main() {
 	}
 	defer c.Close()
 
-	//backupId := uuid.New().String()
-	workflowOptions := client.StartWorkflowOptions{
-		ID:        "backup_sample",
-		TaskQueue: "backup-sample",
-	}
+	app := "Oracle"
+	backupId := uuid.New().String()
 
-	we, err := c.ExecuteWorkflow(context.Background(), workflowOptions, backup.SignalWorkflow)
+	err = SendSignal(c, app, backupId)
 	if err != nil {
-		log.Fatalln("Unable to execute workflow", err)
+		log.Fatalln("Error sending the Signal", err)
+	}
+}
+
+func SendSignal(c client.Client, app, backupId string) error {
+	workflowId := "backup_sample_" + app + "_" + backupId
+	signal := backup.BackupSignal{
+		Action:   "RunBackup",
+		AppName:  app,
+		BackupId: backupId,
 	}
 
-	log.Println("Started workflow", "WorkflowID", we.GetID(), "RunID", we.GetRunID())
+	err := c.SignalWorkflow(context.Background(), "backup_sample", "", "start-backup", signal)
+	if err != nil {
+		return err
+	}
 
-	/*
-		// Synchronously wait for the workflow completion.
-		var result string
-		err = we.Get(context.Background(), &result)
-		if err != nil {
-			log.Fatalln("Unable get workflow result", err)
-		}
-		log.Println("Workflow result:", result)
-	*/
+	log.Println("Workflow[" + workflowId + "]")
+
+	return nil
+}
+func SendQuery(c client.Client, workflowId string) interface{} {
+
+	resp, err := c.QueryWorkflow(context.Background(), workflowId, "", "state")
+	if err != nil {
+		log.Fatalln("Unable to query workflow", err)
+	}
+	var result interface{}
+	if err := resp.Get(&result); err != nil {
+		log.Fatalln("Unable to decode query result", err)
+	}
+
+	return result
 }
