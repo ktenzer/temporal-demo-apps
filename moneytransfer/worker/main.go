@@ -3,10 +3,9 @@ package main
 import (
 	"log"
 
+	"github.com/ktenzer/temporal-demo-apps/moneytransfer"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
-
-	"github.com/temporalio/samples-go/saga"
 )
 
 func main() {
@@ -17,13 +16,13 @@ func main() {
 	}
 	defer c.Close()
 	// This worker hosts both Workflow and Activity functions
-	w := worker.New(c, saga.TransferMoneyTaskQueue, worker.Options{})
-	w.RegisterWorkflow(saga.TransferMoney)
-	w.RegisterActivity(saga.Withdraw)
-	w.RegisterActivity(saga.WithdrawCompensation)
-	w.RegisterActivity(saga.Deposit)
-	w.RegisterActivity(saga.DepositCompensation)
-	w.RegisterActivity(saga.StepWithError)
+	w := worker.New(c, moneytransfer.TransferMoneyTaskQueue, worker.Options{})
+	w.RegisterWorkflow(moneytransfer.TransferMoney)
+	w.RegisterActivity(moneytransfer.Withdraw)
+	w.RegisterActivity(moneytransfer.WithdrawCompensation)
+	w.RegisterActivity(moneytransfer.Deposit)
+	w.RegisterActivity(moneytransfer.DepositCompensation)
+	w.RegisterActivity(moneytransfer.StepWithError)
 	// Start listening to the Task Queue
 	err = w.Run(worker.InterruptCh())
 	if err != nil {

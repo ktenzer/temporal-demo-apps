@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"go.temporal.io/sdk/client"
 
-	saga "github.com/ktenzer/temporal-demo-apps/moneytransfer"
+	"github.com/ktenzer/temporal-demo-apps/moneytransfer"
 )
 
 func main() {
@@ -19,22 +19,22 @@ func main() {
 	defer c.Close()
 	options := client.StartWorkflowOptions{
 		ID:        "transfer-money-workflow",
-		TaskQueue: saga.TransferMoneyTaskQueue,
+		TaskQueue: moneytransfer.TransferMoneyTaskQueue,
 	}
-	transferDetails := saga.TransferDetails{
+	transferDetails := moneytransfer.TransferDetails{
 		Amount:      54.99,
 		FromAccount: "001-001",
 		ToAccount:   "002-002",
 		ReferenceID: uuid.New().String(),
 	}
-	we, err := c.ExecuteWorkflow(context.Background(), options, saga.TransferMoney, transferDetails)
+	we, err := c.ExecuteWorkflow(context.Background(), options, moneytransfer.TransferMoney, transferDetails)
 	if err != nil {
 		log.Fatalln("error starting TransferMoney workflow", err)
 	}
 	printResults(transferDetails, we.GetID(), we.GetRunID())
 }
 
-func printResults(transferDetails saga.TransferDetails, workflowID, runID string) {
+func printResults(transferDetails moneytransfer.TransferDetails, workflowID, runID string) {
 	log.Printf(
 		"\nTransfer of $%f from account %s to account %s is processing. ReferenceID: %s\n",
 		transferDetails.Amount,
