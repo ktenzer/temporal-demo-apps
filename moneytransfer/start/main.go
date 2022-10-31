@@ -4,7 +4,10 @@ import (
 	"context"
 	"crypto/tls"
 	"log"
+	"math/rand"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/google/uuid"
 	"go.temporal.io/sdk/client"
@@ -38,15 +41,20 @@ func main() {
 	}
 
 	defer c.Close()
+	referenceId := uuid.New().String()
+	rand.Seed(time.Now().UnixNano())
+	minTransfer := float32(rand.Intn(100))
+	maxTransfer := float32(rand.Intn(1000000))
+
 	options := client.StartWorkflowOptions{
-		ID:        "transfer-money-workflow",
+		ID:        "transfer-money-workflow-" + referenceId,
 		TaskQueue: moneytransfer.TransferMoneyTaskQueue,
 	}
 	transferDetails := moneytransfer.TransferDetails{
-		Amount:      54.99,
-		FromAccount: "001-001",
-		ToAccount:   "002-002",
-		ReferenceID: uuid.New().String(),
+		Amount:      minTransfer + maxTransfer,
+		FromAccount: strconv.Itoa(rand.Intn(9999 - 1000)),
+		ToAccount:   strconv.Itoa(rand.Intn(9999 - 1000)),
+		ReferenceID: referenceId,
 	}
 	we, err := c.ExecuteWorkflow(context.Background(), options, moneytransfer.TransferMoney, transferDetails)
 	if err != nil {

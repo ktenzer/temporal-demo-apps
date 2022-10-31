@@ -3,26 +3,17 @@ package moneytransfer
 import (
 	"time"
 
-	"go.uber.org/multierr"
-
-	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/multierr"
 )
 
 func TransferMoney(ctx workflow.Context, transferDetails TransferDetails) (err error) {
-	retryPolicy := &temporal.RetryPolicy{
-		InitialInterval:    time.Second,
-		BackoffCoefficient: 2.0,
-		MaximumInterval:    time.Minute,
-		MaximumAttempts:    3,
-	}
+	retryPolicy := SetRetryPolicy(0)
 
 	options := workflow.ActivityOptions{
 		// Timeout options specify when to automatically timeout Activity functions.
 		StartToCloseTimeout: time.Minute,
-		// Optionally provide a customized RetryPolicy.
-		// Temporal retries failures by default, this is just an example.
-		RetryPolicy: retryPolicy,
+		RetryPolicy:         retryPolicy,
 	}
 
 	ctx = workflow.WithActivityOptions(ctx, options)
@@ -45,13 +36,13 @@ func TransferMoney(ctx workflow.Context, transferDetails TransferDetails) (err e
 	}
 
 	defer func() {
+		// uncomment to have time to shut down worker to simulate worker rolling update and ensure that compensation sequence preserves after restart
+		workflow.Sleep(ctx, 10*time.Second)
+
 		if err != nil {
 			errCompensation := workflow.ExecuteActivity(ctx, DepositCompensation, transferDetails).Get(ctx, nil)
 			err = multierr.Append(err, errCompensation)
 		}
-
-		// uncomment to have time to shut down worker to simulate worker rolling update and ensure that compensation sequence preserves after restart
-		// workflow.Sleep(ctx, 10*time.Second)
 	}()
 
 	err = workflow.ExecuteActivity(ctx, StepWithError, transferDetails).Get(ctx, nil)

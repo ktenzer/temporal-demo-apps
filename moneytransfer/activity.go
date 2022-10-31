@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
+	"go.temporal.io/sdk/temporal"
 )
 
 func Withdraw(ctx context.Context, transferDetails TransferDetails) error {
@@ -14,7 +16,15 @@ func Withdraw(ctx context.Context, transferDetails TransferDetails) error {
 		transferDetails.ReferenceID,
 	)
 
-	return nil
+	err := ChaosMonkey()
+	if err != nil {
+		fmt.Printf(
+			"\nWithdraw failed! ReferenceId: %s. Error: "+err.Error()+"\n",
+			transferDetails.ReferenceID,
+		)
+	}
+
+	return err
 }
 
 func WithdrawCompensation(ctx context.Context, transferDetails TransferDetails) error {
@@ -36,7 +46,15 @@ func Deposit(ctx context.Context, transferDetails TransferDetails) error {
 		transferDetails.ReferenceID,
 	)
 
-	return nil
+	err := ChaosMonkey()
+	if err != nil {
+		fmt.Printf(
+			"\nDeposit failed! ReferenceId: %s. Error: "+err.Error()+"\n",
+			transferDetails.ReferenceID,
+		)
+	}
+
+	return err
 }
 
 func DepositCompensation(ctx context.Context, transferDetails TransferDetails) error {
@@ -56,5 +74,5 @@ func StepWithError(ctx context.Context, transferDetails TransferDetails) error {
 		transferDetails.ReferenceID,
 	)
 
-	return errors.New("some error")
+	return temporal.NewNonRetryableApplicationError("Account data mismatch", "StepError", errors.New("data mismatch"))
 }

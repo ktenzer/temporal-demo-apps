@@ -1,7 +1,6 @@
 package moneytransfer
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/mock"
@@ -24,7 +23,6 @@ func Test_Workflow(t *testing.T) {
 	env.OnActivity(WithdrawCompensation, mock.Anything, testDetails).Return(nil)
 	env.OnActivity(Deposit, mock.Anything, testDetails).Return(nil)
 	env.OnActivity(DepositCompensation, mock.Anything, testDetails).Return(nil)
-	env.OnActivity(StepWithError, mock.Anything, testDetails).Return(errors.New("some error"))
 	env.ExecuteWorkflow(TransferMoney, testDetails)
 	require.True(t, env.IsWorkflowCompleted())
 	require.Error(t, env.GetWorkflowError())
