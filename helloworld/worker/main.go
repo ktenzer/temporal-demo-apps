@@ -44,7 +44,7 @@ func main() {
 
 		clientOptions.ConnectionOptions = client.ConnectionOptions{
 			TLS: &tls.Config{
-				ClientCAs:    certPool,
+				RootCAs:      certPool,
 				Certificates: []tls.Certificate{cert},
 				ServerName:   serverName,
 			},
