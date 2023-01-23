@@ -36,5 +36,5 @@ func Workflow(ctx workflow.Context, name string) (string, error) {
 func Activity(ctx context.Context, name string) (string, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("Activity", "name", name)
-	return "Guten Tag" + name + "!", nil
+	return "Good Day" + name + "!", nil
 }
