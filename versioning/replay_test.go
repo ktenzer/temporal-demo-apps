@@ -1,4 +1,4 @@
-package helloworld
+package versioning
 
 import (
 	"testing"
@@ -36,11 +36,12 @@ func (s *replayTestSuite) TearDownTest() {
 //	tctl wf show -w hello_world_workflowID --output_filename ./helloworld.json
 //
 // Or from Temporal Web UI. And you may need to change workflowType in the first event.
-func (s *replayTestSuite) TestReplayWorkflowHistoryFromFile() {
+
+func (s *replayTestSuite) TestReplayWorkflowHistoryV2FromFile() {
 	replayer := worker.NewWorkflowReplayer()
 
 	replayer.RegisterWorkflow(Workflow)
 
-	err := replayer.ReplayWorkflowHistoryFromJSONFile(nil, "helloworld.json")
+	err := replayer.ReplayWorkflowHistoryFromJSONFile(nil, "versioning.json")
 	require.NoError(s.T(), err)
 }
