@@ -30,18 +30,29 @@ func (s *replayTestSuite) TearDownTest() {
 	s.mockCtrl.Finish() // assert mock’s expectations
 }
 
-// This replay test is the recommended way to make sure changing workflow code is backward compatible without non-deterministic errors.
-// "helloworld.json" can be downloaded from Temporal CLI:
-//
-//	tctl wf show -w hello_world_workflowID --output_filename ./helloworld.json
-//
-// Or from Temporal Web UI. And you may need to change workflowType in the first event.
+func (s *replayTestSuite) TestReplayWorkflowHistoryV1FromFile() {
+	replayer := worker.NewWorkflowReplayer()
+
+	replayer.RegisterWorkflow(Workflow)
+
+	err := replayer.ReplayWorkflowHistoryFromJSONFile(nil, "versioning-v1.json")
+	require.NoError(s.T(), err)
+}
 
 func (s *replayTestSuite) TestReplayWorkflowHistoryV2FromFile() {
 	replayer := worker.NewWorkflowReplayer()
 
 	replayer.RegisterWorkflow(Workflow)
 
-	err := replayer.ReplayWorkflowHistoryFromJSONFile(nil, "versioning.json")
+	err := replayer.ReplayWorkflowHistoryFromJSONFile(nil, "versioning-v2.json")
+	require.NoError(s.T(), err)
+}
+
+func (s *replayTestSuite) TestReplayWorkflowHistoryV3FromFile() {
+	replayer := worker.NewWorkflowReplayer()
+
+	replayer.RegisterWorkflow(Workflow)
+
+	err := replayer.ReplayWorkflowHistoryFromJSONFile(nil, "versioning-v3.json")
 	require.NoError(s.T(), err)
 }

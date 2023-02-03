@@ -11,7 +11,6 @@ import (
 	_ "go.temporal.io/sdk/contrib/tools/workflowcheck/determinism"
 )
 
-// Workflow is a Hello World workflow definition.
 func Workflow(ctx workflow.Context, name string) (string, error) {
 	ao := workflow.ActivityOptions{
 		StartToCloseTimeout: 10 * time.Second,
@@ -20,6 +19,16 @@ func Workflow(ctx workflow.Context, name string) (string, error) {
 
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Verisoning workflow started", "name", name)
+
+	// Setup query handler
+	workflowState := "running"
+	err := workflow.SetQueryHandler(ctx, "state", func(input []byte) (string, error) {
+		return workflowState, nil
+	})
+	if err != nil {
+		logger.Error("SetQueryHandler failed: " + err.Error())
+		return "", err
+	}
 
 	var result string
 	v := workflow.GetVersion(ctx, "Version", workflow.DefaultVersion, 2)
@@ -47,8 +56,20 @@ func Workflow(ctx workflow.Context, name string) (string, error) {
 			logger.Error("Activity failed.", "Error", err)
 			return "", err
 		}
+
+		// Example for showing replaying and non-determinism
+		// add new activity
+		//err = workflow.ExecuteActivity(ctx, ActivityA).Get(ctx, &result)
+		// if err != nil {
+		//	logger.Error("Activity failed.", "Error", err)
+		//	return "", err
+		//}
+
+		// set timer for 5 minutes
+		workflow.Sleep(ctx, time.Minute*1)
 	}
 
+	workflowState = "completed"
 	logger.Info("Versioning workflow completed.", "result", result)
 
 	return result, nil

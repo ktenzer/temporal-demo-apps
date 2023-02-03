@@ -44,7 +44,7 @@ func main() {
 	}
 	defer c.Close()
 
-	w := worker.New(c, "versioning-v1", worker.Options{})
+	w := worker.New(c, "versioning", worker.Options{})
 
 	w.RegisterWorkflow(versioning.Workflow)
 	w.RegisterActivity(versioning.ActivityA)

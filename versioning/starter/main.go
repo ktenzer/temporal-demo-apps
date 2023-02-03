@@ -45,7 +45,7 @@ func main() {
 
 	workflowOptions := client.StartWorkflowOptions{
 		ID:        "versioning-workflow",
-		TaskQueue: "versioning-v1",
+		TaskQueue: "versioning",
 	}
 
 	we, err := c.ExecuteWorkflow(context.Background(), workflowOptions, versioning.Workflow, "Temporal")
